@@ -1,8 +1,10 @@
 ---
-title: "NFLProject"
-author: "CW & KJ"
+title: "NFL: Predict Running Back Yardage"
+author: "Cedric Williams (705620756) & Kevin Jackson (730288402)"
 date: "12/9/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -14,51 +16,62 @@ bypass()
 
 ```
 
-##Problem
-Each professional football team is looking for an advantage and so is every gambler out there as well.  Each of the 32 NFL teams is looking for an edge and potentially solving that edge just might bring a Lombardi trophy across this state yonder.  Any insight gained from machine learning is valuable to many organizations.  We will create a toy example that ponders, based on how many defenders are in the box, can we predict the number of yards gained by a running back?  
+\textbf{PROBLEM}
 
-##Application 
-Improving either the offense’s yard gained or helping the defense restrict yards gained gets at the core of a team’s run offense or defense.  By modeling running backs yard output by features such as defenders in the box AND ########, coaches could exploit scenarios by going “no-huddle” and keeping the same number of defenders at the line.  This is just one example of how the offense would utilize this algorithm.  If the defense had this model, they would be able to tailor yard stopping plays on fourth and inches.
-
-##Motivation
-Big Data and ANalytics are an integral part of the NFL experience and beyond marketing.  Kaggle.com and the NFL teamed up again for the Second Annual Big Data Bowl.  This year’s main question is predicting how many yards the running back would gain on a single play.  To win this competition, we’ll need an ensemble algorithm predicting different components.  But for this project, we will focus on the defenders and running back yards gained.
-
-##Survey of Related Work
-Sports Analytics is a hot topic and has been for a while for basketball, baseball or even soccer.  But the NFL recently tagged players’ uniforms and game balls so there isn’t a huge amount of related work at this time. This type of data has only been available for the past two years. 
-
-##Approach to model
-We first took the data set and eliminated which columns/rows weren’t useful for our analysis.  Since we are looking at running back output, we only need the running back row data.  Each row has metadata about the play so eliminating the other rows did not change the data.  In the end, our aggregated list of columns was: Nfld, DisplayName, PlayerHeight, PlayerWeight, PlayerBirthDate, Position, GameId, PlayId, Turf, Quarter, Down, FieldPosition, YardLine, Distance, OffenseFormation, OffensePersonnel, DefendersInTheBox, DefensePersonnel, PlayDirection, TimeHandOff, TimeSnap, Yards, LastRunPlayYards, and CumYards.  
+Every college and professional football team is looking for a competitive advantage, some insight to help their team perform better.  The problem is the game of football involves many facets and it is hard for humans to extract insights with a game that has so many moving parts.  In football, there are 22 men on the field that may or may not contribute to your victory.  Using Machine Learning and tracking sensors, teams potentially can model the opponent's defense and gain valuable insight. Any insight gained from machine learning is valuable to many organizations.  We will create a simple example that answers a key question, based on the number of defenders in the box, can we predict the number of yards gained by a running back?  
 
 
-#Exploratory Analysis
-We conduct some feature engineering and create additional features such as avgYardsPerDefender, avgDistancePerDefenders, avgDefendersInTheBox, and lastly a measure called goodRun for any rush that earned a first down or went over 5 yards.  
+\textbf{APPLICATION} 
 
-Below is our correlation matrix.  
+Predicting the running backs output based on the number of defensive players at the line of scrimmage, would be helpful and assist coach's with in-game planning or designing plays.  With the proper model, teams could predict their running backs performance and alter their game strategy.   By modeling running backs' yard output with features such as defenders in the box and other characteristics, coaches could exploit scenarios by going “no-huddle” and keeping the same number of defenders at the line.  This is just one example of how the offense would utilize this algorithm.  If the defense had this model, they would be able to tailor yard stopping plays on fourth and inches.
+
+
+\textbf{MOTIVATION}
+
+Big Data and Analytics are an integral part of the NFL experience and way beyond marketing.  Kaggle.com and the NFL teamed up again for the Second Annual Big Data Bowl.  This year’s main question is predicting how many yards the running back would gain on a single play.  We will need an ensemble algorithm predicting different components to win this competition.  Our objective focuses on the number of defenders at the line dictating the running back's performance.
+
+
+\textbf{SURVEY OF RELATED WORK}
+
+Sports Analytics is a hot topic and has been for a while in basketball, baseball or even soccer.  But the NFL recently tagged players’ uniforms and game balls so there isn’t a huge amount of related work at this time. This type of data has only been available for the past two years. 
+
+
+\textbf{APPROACH TO THE MODEL}
+
+We first examined the data set and eliminated columns/rows that weren’t useful for our analysis.  Since we are looking at running back output, we only need the running back row data.  Each row has metadata about the play so eliminating the other rows did not change the data.  In the end, our aggregated list of columns was: Nfld, DisplayName, PlayerHeight, PlayerWeight, PlayerBirthDate, Position, GameId, PlayId, Turf, Quarter, Down, FieldPosition, YardLine, Distance, OffenseFormation, OffensePersonnel, DefendersInTheBox, DefensePersonnel, PlayDirection, TimeHandOff, TimeSnap, Yards, LastRunPlayYards, and CumYards.  
+
+
+\textbf{EXPLORATORY ANALYSIS}
+
+We conduct some feature engineering and create additional features such as avgYardsPerDefender, avgDistancePerDefenders, avgDefendersInTheBox, and lastly a measure called goodRun for any rush that earned a first down or went over 5 yards.  We explored the dimensions and metrics to discover any correlations.  There was some redundant data that will will eliminate in the modeling stage.
+
+Below is our correlation matrix.  Our assumption is the number of defenders in the box determines running back success.  There was limited correlation between good runs and number defenders in the box.  Metrics had higher correlation when they compared distance with downs or defenders.  
+
 ```{r corMatrix, echo=FALSE}
  corr <- cor(agg.data.rb[,c(-1,-2,-3)],method = "spearman",use="pairwise.complete.obs")
  corrplot(corr,method="color" ,addCoef.col="black",number.digits=2,number.cex = .51,tl.cex=.6,number.font = .01)
 
 ```
 
+We also compared defenders in the box against yards gained but faceted by the down and the quarter.  The 5th quarter is overtime.  The data clustered and seemed to follow a curve but wasn't very linear for the earlier downs.  There was more linear formation as the downs increased to 4th down.  It was evident that the distance and downs had a major influence.
 
-```{r cars}
+```{r cars, echo=FALSE}
 plots()
 g + geom_jitter(aes(y=(avgYards),x=avgDefendersInTheBox))+facet_grid(Quarter~Down)+ggtitle("Downs by Quarters*")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-g + geom_boxplot(aes(y=DefendersInTheBox,x=factor(Down)))+ggtitle("Defenders In The Box by Downs")
-
-```
+Each time an additional defender was added to the box, the median yardage gained was decreased.  For our analysis, we're only looking at running plays.  Increasing the defenders in the box exposes the defense against the big pass play.
 
 ```{r , echo=FALSE}
 
 g + geom_boxplot(aes(x=factor(DefendersInTheBox),y=Yards))+ggtitle("Defenders In The Box vs Yards Gained")
 ```
+
+
+\textbf{PREDICTIVE MODEL}
+
+
+Our model was a linear regression.  We started with more features but realized that most features were not improving the model.  
 
 ```{r linearModel, echo=FALSE}
 
@@ -67,14 +80,9 @@ summary(linear.model2)
 
 ```
 
-For our first model, we used more parameters than suggested by the high Pr() score and left in Down, Quarter, and prePlayYards.  Our accuracy was `r min_max_accuracy2` and based on limited data, we're pleased.  With limited data and time to create more features, we're unable to increaes the accuracy at this point.
+For our first model, we used more parameters than suggested by the high Pr() score, and left within the model Down, Quarter, and prePlayYards.  Our accuracy was `r min_max_accuracy2` and based on limited data, we're pleased.  With limited data and time to create more features, we're unable to increase the accuracy at this point.
 
-```{r predictions, echo=FALSE}
-
-
-
-
-```
+We removed the high probability features and re-ran the model.  There was a minimal improvement.
 
 ```{r linearModel2, echo=FALSE}
 
@@ -84,8 +92,16 @@ summary(linear.model)
 ```
 
 
-When we reduced our model to the most significant parameters and make it simple, we see a slight accuracy improvement of `r min_max_accuracy` over `r min_max_accuracy2` but not enough to move the needle.
-
-In conclusion, predicting rushing yards is extremely complicated and even with a simple model, we were only able to almost reach 40% accuracy.
+When we reduced our model to the most significant parameters, we see a slight accuracy improvement of `r min_max_accuracy` over `r min_max_accuracy2` but not enough to move the needle.  Overall, we need more features to better describe and predict running back yardage.  Defenders in the box are the most prominent feature but by itself, can't predict the running back's outcome.
 
 
+\textbf{CONCLUSION}
+
+In conclusion, predicting rushing yards is extremely complicated and even with a simple linear regression model, we were only able to nearly reach 40% accuracy.  We intend to add more features and have a goal to surpass 60% accuracy.
+
+
+\textbf{REFERENCES}
+
+Kaggle & NFL Big Data Bowl Challenge: https://www.kaggle.com/c/nfl-big-data-bowl-2020
+
+Cedric Williams Github: https://github.com/ceo4ced/nflRunningBacks
