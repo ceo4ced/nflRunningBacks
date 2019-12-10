@@ -5,6 +5,8 @@ require(caret)
 require(factoextra)
 require(rpart)
 setwd("~/Documents/GitHub/nflRunningBacks")
+
+run <- function(){
 nfl.data <- read.csv("data/train.csv",stringsAsFactors = FALSE)
 
 
@@ -63,7 +65,7 @@ data.rb <- data[data$Position=="RB",]
  
  #rm(data,nfl.data)
  
- agg.data.rb <- unique(rb.gm.data) %>%
+ agg.data.rb <<- unique(rb.gm.data) %>%
                            group_by(NflId,GameId,PlayId, Quarter,Down) %>%
                            transmute(avgDistancePerDefenders = Distance/DefendersInTheBox,
                                      avgYardsPerDefenders = Yards/DefendersInTheBox,
@@ -79,11 +81,18 @@ data.rb <- data[data$Position=="RB",]
                                      goodRun = ifelse(Yards > 5,as.numeric(1),as.numeric(0)))
  
  agg.data.rb$prePlayYards[is.na(agg.data.rb$prePlayYards)] <- 0
- 
+ saveRDS(agg.data.rb,"rbData.rds")
+}
+
+bypass <- function(){
+   agg.data.rb <<- readRDS("rbData.rds")
+}
  ## graphs
+ plots <- function(){
+ g <<- ggplot(data=agg.data.rb) 
+ }
  
- g <- ggplot(data=agg.data.rb) 
- 
+ more.plots <- function(){
  # plots
  
  g + geom_boxplot(aes(round(avgDefendersInTheBox),avgYards)) + facet_grid(.~Down)
@@ -91,7 +100,7 @@ data.rb <- data[data$Position=="RB",]
  g + geom_jitter(aes(y=(avgYards),x=avgDefendersInTheBox))+facet_grid(Quarter~Down)
  
  g + geom_boxplot(aes(y=Distance,x=factor(Down)))
- g + geom_boxplot(aes(y=DefendersInTheBox,x=factor(Down)))
+ g + geom_boxplot(aes(x=DefendersInTheBox,y=Distance))
  g + geom_boxplot(aes(y=handoffTime,x=factor(Down)))
  g + geom_jitter(aes(y=prePlayYards,x=DefendersInTheBox))
  g + geom_jitter(aes(y=handoffTime,x=DefendersInTheBox))
@@ -99,15 +108,18 @@ data.rb <- data[data$Position=="RB",]
  g + geom_boxplot(aes(y=DefendersInTheBox, x=factor(goodRun)))
  g + geom_boxplot(aes(y=DefendersInTheBox, x=factor(Quarter)))
  g + geom_boxplot(aes(y=DefendersInTheBox, x=factor(Down)))
+ }
  
- 
+ cor.plot <- function(){
 ## want to group data by downs so each RB will have 4 entries
  png(file="corr.png", res=300, width=4500, height=4500)
  corr <- cor(agg.data.rb[,c(-1,-2,-3)],method = "spearman",use="pairwise.complete.obs")
  corrplot(corr,method="color" ,addCoef.col="black",number.digits=2,number.cex = 1)
  dev.off()
 
-
+ }
+ 
+ createLinearModel <- function(){
  ##  Need to Split the data up
  
  train.index <- caret::createDataPartition(agg.data.rb$goodRun,p=.7,list=FALSE)
@@ -117,13 +129,15 @@ data.rb <- data[data$Position=="RB",]
 ### working on everything below this comment
 
  
+ 
  ## linear model
-
- linear.model <- lm(Yards~DefendersInTheBox+Distance+cumYards, data=train)
+ linear.model2 <<- lm(Yards~DefendersInTheBox+Distance+cumYards+Down+Quarter+prePlayYards+handoffTime, data=train)
+ linear.model <<- lm(Yards~DefendersInTheBox+Distance+cumYards+handoffTime, data=train)
  pred <- predict(linear.model,test)
-
- actual_preds <-data.frame(cbind(actuals=test$Yards,predicted=pred))
- 
- min_max_accuracy <- mean(apply(actual_preds, 1, min) / apply(actual_preds, 1, max)) 
- 
+ pred2 <- predict(linear.model2,test)
+ actual_preds <<-data.frame(cbind(actuals=test$Yards,predicted=pred))
+ actual_preds2 <<-data.frame(cbind(actuals=test$Yards,predicted=pred2))
+ min_max_accuracy <<- mean(apply(actual_preds, 1, min) / apply(actual_preds, 1, max)) 
+ min_max_accuracy2 <<- mean(apply(actual_preds2, 1, min) / apply(actual_preds2, 1, max)) 
+ }
  

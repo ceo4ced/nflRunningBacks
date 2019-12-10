@@ -1,0 +1,91 @@
+---
+title: "NFLProject"
+author: "CW & KJ"
+date: "12/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source('~/Documents/GitHub/nflRunningBacks/nflRunningBackStyles.R')
+
+bypass()
+
+```
+
+##Problem
+Each professional football team is looking for an advantage and so is every gambler out there as well.  Each of the 32 NFL teams is looking for an edge and potentially solving that edge just might bring a Lombardi trophy across this state yonder.  Any insight gained from machine learning is valuable to many organizations.  We will create a toy example that ponders, based on how many defenders are in the box, can we predict the number of yards gained by a running back?  
+
+##Application 
+Improving either the offense’s yard gained or helping the defense restrict yards gained gets at the core of a team’s run offense or defense.  By modeling running backs yard output by features such as defenders in the box AND ########, coaches could exploit scenarios by going “no-huddle” and keeping the same number of defenders at the line.  This is just one example of how the offense would utilize this algorithm.  If the defense had this model, they would be able to tailor yard stopping plays on fourth and inches.
+
+##Motivation
+Big Data and ANalytics are an integral part of the NFL experience and beyond marketing.  Kaggle.com and the NFL teamed up again for the Second Annual Big Data Bowl.  This year’s main question is predicting how many yards the running back would gain on a single play.  To win this competition, we’ll need an ensemble algorithm predicting different components.  But for this project, we will focus on the defenders and running back yards gained.
+
+##Survey of Related Work
+Sports Analytics is a hot topic and has been for a while for basketball, baseball or even soccer.  But the NFL recently tagged players’ uniforms and game balls so there isn’t a huge amount of related work at this time. This type of data has only been available for the past two years. 
+
+##Approach to model
+We first took the data set and eliminated which columns/rows weren’t useful for our analysis.  Since we are looking at running back output, we only need the running back row data.  Each row has metadata about the play so eliminating the other rows did not change the data.  In the end, our aggregated list of columns was: Nfld, DisplayName, PlayerHeight, PlayerWeight, PlayerBirthDate, Position, GameId, PlayId, Turf, Quarter, Down, FieldPosition, YardLine, Distance, OffenseFormation, OffensePersonnel, DefendersInTheBox, DefensePersonnel, PlayDirection, TimeHandOff, TimeSnap, Yards, LastRunPlayYards, and CumYards.  
+
+
+#Exploratory Analysis
+We conduct some feature engineering and create additional features such as avgYardsPerDefender, avgDistancePerDefenders, avgDefendersInTheBox, and lastly a measure called goodRun for any rush that earned a first down or went over 5 yards.  
+
+Below is our correlation matrix.  
+```{r corMatrix, echo=FALSE}
+ corr <- cor(agg.data.rb[,c(-1,-2,-3)],method = "spearman",use="pairwise.complete.obs")
+ corrplot(corr,method="color" ,addCoef.col="black",number.digits=2,number.cex = .51,tl.cex=.6,number.font = .01)
+
+```
+
+
+```{r cars}
+plots()
+g + geom_jitter(aes(y=(avgYards),x=avgDefendersInTheBox))+facet_grid(Quarter~Down)+ggtitle("Downs by Quarters*")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+g + geom_boxplot(aes(y=DefendersInTheBox,x=factor(Down)))+ggtitle("Defenders In The Box by Downs")
+
+```
+
+```{r , echo=FALSE}
+
+g + geom_boxplot(aes(x=factor(DefendersInTheBox),y=Yards))+ggtitle("Defenders In The Box vs Yards Gained")
+```
+
+```{r linearModel, echo=FALSE}
+
+createLinearModel()
+summary(linear.model2)
+
+```
+
+For our first model, we used more parameters than suggested by the high Pr() score and left in Down, Quarter, and prePlayYards.  Our accuracy was `r min_max_accuracy2` and based on limited data, we're pleased.  With limited data and time to create more features, we're unable to increaes the accuracy at this point.
+
+```{r predictions, echo=FALSE}
+
+
+
+
+```
+
+```{r linearModel2, echo=FALSE}
+
+
+summary(linear.model)
+
+```
+
+
+When we reduced our model to the most significant parameters and make it simple, we see a slight accuracy improvement of `r min_max_accuracy` over `r min_max_accuracy2` but not enough to move the needle.
+
+In conclusion, predicting rushing yards is extremely complicated and even with a simple model, we were only able to almost reach 40% accuracy.
+
+
